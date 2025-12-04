@@ -28,11 +28,18 @@ class BrownianPathBuilder(VectorPathBuilder):
         super().__init__(times, n_factors)
 
     def build(self, rng: RandomNumberGenerator, n_paths: int):
+        def antithetics():
+            half_paths = int(np.floor(n_paths / 2))
+            part1 = rng.normal(size=(self.n_factors, half_paths))
+            part2 = part1 * -1
+            result = np.concat([part1, part2], axis=1)
+            return result
+
         num_times = len(self.times)
         time_steps = [self.times[0]] + [self.times[i + 1] - self.times[i] for i in range(num_times - 1)]
 
         dZ = np.stack(
-            [rng.normal(size=(self.n_factors, n_paths)) * np.sqrt(dt) for dt in time_steps],
+            [antithetics() * np.sqrt(dt) for dt in time_steps],
             axis=1
         )
         Z = np.zeros(shape=(self.n_factors, num_times, n_paths))

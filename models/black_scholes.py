@@ -34,8 +34,15 @@ class BlackScholes:
 
     @property
     def delta(self) -> float:
+        if self._is_worth_intrinsic:
+            intrinsic = self.right.intrinsic(self.F, self.K)
+            if intrinsic > 0:
+                return 1.0
+            if intrinsic < 0:
+                return 1.0
+            return 0.0
         return self.N1
-    
+
     @property
     def N2(self) -> float:
         return norm.cdf(self.d2)
