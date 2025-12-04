@@ -1,12 +1,12 @@
-from numbers import Number
 from typing import Tuple, Optional
 from unittest import TestCase
 
 import numpy as np
 from numpy import ndarray
 
-from process.vector_path_builder import BrownianPathBuilder
+from process.vector_path_builder import BrownianPathBuilder, CorrelatedNormalPathsBuilder, LognormalPathsBuilder
 from process.vectorpath import VectorPath
+from test.random_correlation_matrix import RandomCorrelationMatrix
 from utils.random_number_generator import RandomNumberGenerator
 from utils.random_test_case import RandomisedTest
 from utils.statistic_test_utils import StatisticalTestUtils
@@ -77,3 +77,71 @@ class TestVectorPath(TestCase):
             )
 
         check_stat("Rho should be 0", sample_rho, 0.0)
+
+    def _random_correlated_brownian_builder(self, rng: RandomNumberGenerator,
+                                            n_factors: Optional[int] = None) -> CorrelatedNormalPathsBuilder:
+        n_times = rng.randint(1, 10)
+        times = rng.random_times(n_times)
+        n_factors = n_factors or rng.randint(1, 4)
+        rho_matrix = RandomCorrelationMatrix.truly_random(rng, n_factors)
+        return CorrelatedNormalPathsBuilder(times, rho_matrix)
+
+    @RandomisedTest(number_of_runs=10)
+    def test_correlated_brownians(self, rng: RandomNumberGenerator):
+        num_factors = rng.randint(2, 4)
+        bldr = self._random_correlated_brownian_builder(rng, num_factors)
+        factor_1, factor_2 = rng.shuffle(list(range(num_factors)))[:2]
+        i_time = rng.randint(bldr.n_times)
+        expected_rho = bldr.rho_matrix[factor_1][factor_2]
+
+        def sample_rho(brownians: VectorPath) -> Tuple[float, float]:
+            tol = 0.01
+            path_1 = brownians.factor_values(factor_1, i_time)
+            path_2 = brownians.factor_values(factor_2, i_time)
+            rho_matrix: np.ndarray = np.corrcoef(path_1, path_2)
+            return rho_matrix[0, 1], tol
+
+        def check_stat(msg, statistic_func, expected_value):
+            self.assertTrue(
+                StatisticalTestUtils.check_statistic(
+                    lambda n_samples: bldr.build(rng, n_samples),
+                    statistic_func,
+                    expected=expected_value,
+                ),
+                msg
+            )
+
+        check_stat(f"Rho should be {expected_rho:1.3f}", sample_rho, expected_rho)
+
+    @RandomisedTest(number_of_runs=10)
+    def test_lognormals(self, rng):
+        F = rng.uniform(80, 120)
+        T = rng.uniform(2.0)
+        vol = rng.uniform(0.5)
+        times = np.array([T / 2.0, T])
+        bldr = LognormalPathsBuilder(
+            prices = np.asarray([F]),
+            times = np.asarray(times),
+            rho_matrix=np.identity(1),
+            drifts=np.asarray([-0.5 * vol * vol]),
+            vols = np.asarray([vol])
+        )
+        def check_stat(msg, statistic_func, expected_value):
+            self.assertTrue(
+                StatisticalTestUtils.check_statistic(
+                    lambda n_samples: bldr.build(rng, n_samples),
+                    statistic_func,
+                    init_n_samples=20_000,
+                    expected=expected_value,
+                    n_tries=10,
+                    log_on_try=8
+                ),
+                msg,
+            )
+        def sample_forward_price(brownians: VectorPath) -> Tuple[float, float]:
+            tol = F * 1e-3
+            path = brownians.factor_values(i_factor=0, i_time=1)
+            return path.mean(), tol
+
+        check_stat(f"Forward prices should be {F:1.3f}", sample_forward_price, F)
+

@@ -1,6 +1,5 @@
 import numpy as np
 
-from utils.random_number_generator import RandomNumberGenerator
 from utils.utils import checked_type
 
 
