@@ -15,7 +15,7 @@ from utils.random_number_generator import RandomNumberGenerator
 
 class SeedGenerator:
     """
-    Provides a deterministic seed iterator for random tests
+    Provides a deterministic seed iterator for random test
     """
 
     def __init__(self, initial_seed=None):
@@ -28,7 +28,7 @@ class SeedGenerator:
 class RandomisedTest:  # pragma: no cover
     """ Context manager around a test case that has a saltable rng
 
-        seed_generator is provided when running a deterministic set of 'randomised' tests.
+        seed_generator is provided when running a deterministic set of 'randomised' test.
         set 'seed' to reproduce a specific failing test
     """
 
