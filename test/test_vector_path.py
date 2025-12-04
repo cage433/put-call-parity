@@ -115,33 +115,56 @@ class TestVectorPath(TestCase):
 
     @RandomisedTest(number_of_runs=10)
     def test_lognormals(self, rng):
-        F = rng.uniform(80, 120)
-        T = rng.uniform(2.0)
-        vol = rng.uniform(0.5)
-        times = np.array([T / 2.0, T])
+        n_factors = rng.randint(2, 4)
+        Fs = [rng.uniform(80, 120) for _ in range(n_factors)]
+        n_times = rng.randint(1, 10)
+        Ts = rng.random_times(n_times)
+        vols = np.asarray([rng.uniform(0.5) for _ in range(n_factors)])
+        drifts = np.einsum("f,f->f", vols, vols) * -0.5
+        times = np.asarray(Ts)
+        rho_matrix = RandomCorrelationMatrix.truly_random(rng, n_factors)
         bldr = LognormalPathsBuilder(
-            prices = np.asarray([F]),
+            prices = np.asarray(Fs),
             times = np.asarray(times),
-            rho_matrix=np.identity(1),
-            drifts=np.asarray([-0.5 * vol * vol]),
-            vols = np.asarray([vol])
+            rho_matrix=rho_matrix,
+            drifts=drifts,
+            vols = vols
         )
+
+        i_factor = rng.randint(n_factors)
+        j_factor = rng.randint(n_factors)
+        i_time = rng.randint(n_times)
         def check_stat(msg, statistic_func, expected_value):
             self.assertTrue(
                 StatisticalTestUtils.check_statistic(
                     lambda n_samples: bldr.build(rng, n_samples),
                     statistic_func,
-                    init_n_samples=20_000,
+                    init_n_samples=10_000,
                     expected=expected_value,
                     n_tries=10,
-                    log_on_try=8
+                    log_on_try=7
                 ),
                 msg,
             )
-        def sample_forward_price(brownians: VectorPath) -> Tuple[float, float]:
-            tol = F * 1e-3
-            path = brownians.factor_values(i_factor=0, i_time=1)
+
+        def sample_mean(vector_path: VectorPath) -> Tuple[float, float]:
+            tol = Fs[i_factor] * 1e-3
+            path = vector_path.factor_values(i_factor=i_factor, i_time=i_time)
             return path.mean(), tol
 
-        check_stat(f"Forward prices should be {F:1.3f}", sample_forward_price, F)
+        def sample_vol(vector_path: VectorPath) -> Tuple[float, float]:
+            tol = vols[i_factor] * 1e-3
+            path = vector_path.factor_values(i_factor=i_factor, i_time=i_time)
+            observed_vol = np.log(path).std() / np.sqrt(times[i_time])
+            return observed_vol, tol
+
+        def sample_rho(vector_path: VectorPath) -> Tuple[float, float]:
+            tol = 0.02
+            path_i = vector_path.factor_values(i_factor=i_factor, i_time=i_time)
+            path_j = vector_path.factor_values(i_factor=j_factor, i_time=i_time)
+            observed_rho = np.corrcoef(np.log(path_i), np.log(path_j))[0][1]
+            return observed_rho, tol
+        check_stat(f"Forward prices should be {Fs[i_factor]:1.3f}", sample_mean, Fs[i_factor])
+        check_stat(f"Vols should be {vols[i_factor]:1.3f}", sample_vol, vols[i_factor])
+        check_stat(f"Rho should be {rho_matrix[i_factor, j_factor]:1.3f}", sample_rho, rho_matrix[i_factor, j_factor])
 
