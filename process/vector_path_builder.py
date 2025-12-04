@@ -4,7 +4,7 @@ import numpy as np
 from numpy import ndarray
 from numpy.linalg import svd
 
-from process.vectorpath import VectorPath
+from process.vector_path import VectorPath
 from utils.random_number_generator import RandomNumberGenerator
 from utils.utils import checked_type
 

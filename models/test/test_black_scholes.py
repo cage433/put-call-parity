@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from models import BlackScholes, CALL, PUT
-from utils import RandomisedTest
+from test_utils.random_test_case import RandomisedTest
 
 
 class BlackScholesTestCase(TestCase):

@@ -1,9 +1,7 @@
 from collections.abc import Callable
-from numbers import Number
 from typing import Tuple
 
-from process.vectorpath import VectorPath
-from utils.random_number_generator import RandomNumberGenerator
+from process.vector_path import VectorPath
 
 
 class StatisticalTestUtils:

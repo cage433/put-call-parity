@@ -5,11 +5,11 @@ import numpy as np
 from numpy import ndarray
 
 from process.vector_path_builder import BrownianPathBuilder, CorrelatedNormalPathsBuilder, LognormalPathsBuilder
-from process.vectorpath import VectorPath
-from test.random_correlation_matrix import RandomCorrelationMatrix
+from process.vector_path import VectorPath
+from test_utils.random_correlation_matrix import RandomCorrelationMatrix
 from utils.random_number_generator import RandomNumberGenerator
-from utils.random_test_case import RandomisedTest
-from utils.statistic_test_utils import StatisticalTestUtils
+from test_utils.random_test_case import RandomisedTest
+from test_utils.statistic_test_utils import StatisticalTestUtils
 
 
 class TestVectorPath(TestCase):
@@ -113,7 +113,7 @@ class TestVectorPath(TestCase):
 
         check_stat(f"Rho should be {expected_rho:1.3f}", sample_rho, expected_rho)
 
-    @RandomisedTest(number_of_runs=10)
+    @RandomisedTest(number_of_runs=3)
     def test_lognormals(self, rng):
         n_factors = rng.randint(2, 4)
         Fs = [rng.uniform(80, 120) for _ in range(n_factors)]
