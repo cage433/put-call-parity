@@ -20,9 +20,6 @@ class OptionReplication:
     def _delta(self, price: float, t: float):
         return BlackScholes(self.right, price, self.K, self.vol, self.T - t).delta
 
-    def _n2(self, price: float, t: float):
-        return BlackScholes(self.right, price, self.K, self.vol, self.T - t).N2
-
     def simulation(self, rng: RandomNumberGenerator, n_time_steps: int, n_paths: int) -> np.ndarray:
         times = np.asarray([i * self.T / n_time_steps for i in range(n_time_steps + 1)])
         drift = rng.uniform(-0.2, 0.2)
