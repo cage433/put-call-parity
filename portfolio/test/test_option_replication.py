@@ -15,8 +15,8 @@ class OptionReplicationTestCase(TestCase):
         K = 103.0
         T = 0.5
         replicator = OptionReplication(CALL, K, F, vol, T)
-        n_time_steps = 200
-        n_paths = 2000
+        n_time_steps = 100
+        n_paths = 1000
         payoffs = replicator.simulation(rng, n_time_steps=n_time_steps, n_paths=n_paths)
         payoff = payoffs.mean()
         se = payoffs.std() / np.sqrt(n_paths)

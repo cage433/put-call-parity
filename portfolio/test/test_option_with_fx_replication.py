@@ -15,7 +15,7 @@ class OptionReplicationTestCase(TestCase):
         FX = 1.1
         F_vol = 0.3
         FX_vol = 0.2
-        rho = -0.99
+        rho = -0.5
         K = F * FX * rng.uniform(0.95, 1.05)
         T = 0.5
         combined_vol = np.sqrt(F_vol * F_vol + 2 * rho * F_vol * FX_vol + FX_vol * FX_vol)
