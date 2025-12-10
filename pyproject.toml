@@ -13,7 +13,7 @@ dependencies = [
 
 
 [tool.poetry]
-packages = [{include = "tp_quantity", from = "src"}]
+packages = [{include = "put_call_parity", from = "src"}]
 version = "0.0.0"
 
 

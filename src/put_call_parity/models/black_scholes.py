@@ -1,14 +1,14 @@
 from numbers import Number
 import numpy as np
 from scipy.stats import norm
-from models import OptionRight, CALL
 
 __all__ = [
     "BlackScholes"
 ]
 
+from tp_utils.type_utils import checked_type
 
-from utils import checked_type
+from put_call_parity.models import OptionRight, CALL
 
 
 # noinspection PyPep8Naming

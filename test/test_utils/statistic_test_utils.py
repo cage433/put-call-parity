@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Tuple
 
-from process.vector_path import VectorPath
+from put_call_parity.process.vector_path import VectorPath
 
 
 class StatisticalTestUtils:

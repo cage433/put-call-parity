@@ -1,11 +1,11 @@
 from numbers import Number
 
 import numpy as np
+from tp_random_tests.random_number_generator import RandomNumberGenerator
+from tp_utils.type_utils import checked_type
 
-from models import OptionRight, BlackScholes
-from process.vector_path_builder import LognormalPathsBuilder
-from utils import checked_type
-from utils.random_number_generator import RandomNumberGenerator
+from put_call_parity.models import OptionRight, BlackScholes
+from put_call_parity.process.vector_path_builder import LognormalPathsBuilder
 
 
 # noinspection PyPep8Naming

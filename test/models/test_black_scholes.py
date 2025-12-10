@@ -1,7 +1,8 @@
 from unittest import TestCase
 
-from models import BlackScholes, CALL, PUT
-from test_utils.random_test_case import RandomisedTest
+from tp_random_tests.random_test_case import RandomisedTest
+
+from put_call_parity.models import BlackScholes, CALL, PUT
 
 
 class BlackScholesTestCase(TestCase):

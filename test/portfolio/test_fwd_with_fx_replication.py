@@ -1,11 +1,10 @@
 from unittest import TestCase
 
 import numpy as np
+from tp_random_tests.random_test_case import RandomisedTest
 
-from models import CALL, BlackScholes
-from portfolio.fwd_with_fx_replication import FwdWithFXReplication
+from put_call_parity.portfolio.fwd_with_fx_replication import FwdWithFXReplication
 from test_utils.random_correlation_matrix import RandomCorrelationMatrix
-from test_utils.random_test_case import RandomisedTest
 
 
 class FwdWithFXReplicationTestCase(TestCase):

@@ -1,11 +1,10 @@
 from unittest import TestCase
 
 import numpy as np
+from tp_random_tests.random_test_case import RandomisedTest
 
-from models import CALL, BlackScholes
-from portfolio.option_replication import OptionReplication
-from portfolio.option_with_fx_replication import OptionWithFXReplication
-from test_utils.random_test_case import RandomisedTest
+from put_call_parity.models import CALL, BlackScholes
+from put_call_parity.portfolio.option_with_fx_replication import OptionWithFXReplication
 
 
 class OptionReplicationTestCase(TestCase):

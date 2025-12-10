@@ -1,5 +1,5 @@
-from quantity import UOM, CURRENCIES
-from utils import checked_type
+from tp_quantity.uom import UOM
+from tp_utils.type_utils import checked_type
 
 
 class OrderedFxPair:

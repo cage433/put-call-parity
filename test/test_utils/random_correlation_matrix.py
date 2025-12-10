@@ -1,6 +1,5 @@
 import numpy as np
-
-from utils.random_number_generator import RandomNumberGenerator
+from tp_random_tests.random_number_generator import RandomNumberGenerator
 
 
 class RandomCorrelationMatrix:

@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy import ndarray
 from numpy.linalg import svd
+from tp_random_tests.random_number_generator import RandomNumberGenerator
+from tp_utils.type_utils import checked_type
 
-from process.vector_path import VectorPath
-from utils.random_number_generator import RandomNumberGenerator
-from utils.utils import checked_type
+from put_call_parity.process.vector_path import VectorPath
 
 
 class VectorPathBuilder(ABC):

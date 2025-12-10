@@ -1,6 +1,7 @@
 import unittest
 
-from quantity import MWH, USD, Qty, MT, SCALAR
+from tp_quantity.quantity import Qty
+from tp_quantity.uom import USD, SCALAR, MWH, MT
 
 
 class QtyTestCase(unittest.TestCase):

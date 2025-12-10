@@ -1,6 +1,5 @@
 import numpy as np
-
-from utils.utils import checked_type
+from tp_utils.type_utils import checked_type
 
 
 class VectorPath:
