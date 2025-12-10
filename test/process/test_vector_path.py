@@ -3,13 +3,13 @@ from unittest import TestCase
 
 import numpy as np
 from numpy import ndarray
+from tp_maths.random.random_correlation_matrix import RandomCorrelationMatrix
 from tp_random_tests.random_number_generator import RandomNumberGenerator
 from tp_random_tests.random_test_case import RandomisedTest
 
 from put_call_parity.process.vector_path import VectorPath
 from put_call_parity.process.vector_path_builder import BrownianPathBuilder, CorrelatedNormalPathsBuilder, \
     LognormalPathsBuilder
-from test_utils.random_correlation_matrix import RandomCorrelationMatrix
 from test_utils.statistic_test_utils import StatisticalTestUtils
 
 
