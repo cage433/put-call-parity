@@ -1,0 +1,22 @@
+[project]
+name = "put-call-parity"
+version = "0.1.0"
+description = "Investigation into put-call parity with FX"
+authors = [
+    {name = "cage433",email = "cage433@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "tp-maths @ git+https://github.com/cage433/tp-maths"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)"
+]
