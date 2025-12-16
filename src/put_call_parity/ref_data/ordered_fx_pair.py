@@ -6,7 +6,6 @@ class OrderedFxPair:
     def __init__(self, from_ccy: UOM, to_ccy: UOM):
         from_ccy.assert_is_ccy()
         to_ccy.assert_is_ccy()
-        assert from_ccy != to_ccy, f"require distinct currencies for OrderedFxPair, {from_ccy}, {to_ccy}"
 
         self.from_ccy = checked_type(from_ccy, UOM)
         self.to_ccy = checked_type(to_ccy, UOM)
@@ -27,3 +26,19 @@ class OrderedFxPair:
     @property
     def uom(self) -> UOM:
         return self.to_ccy / self.from_ccy
+
+    @property
+    def is_degenerate(self) -> bool:
+        return self.from_ccy == self.to_ccy
+
+    @property
+    def is_usd_pair(self) -> bool:
+        return self.from_ccy == USD or self.to_ccy == USD
+
+    @staticmethod
+    def from_uom(uom: UOM) -> 'OrderedFxPair':
+        from_ccy = uom.denominator
+        to_ccy = uom.numerator
+        for c in [from_ccy, to_ccy]:
+            assert c.is_ccy, f"{c} is not a ccy"
+        return OrderedFxPair(from_ccy, to_ccy)

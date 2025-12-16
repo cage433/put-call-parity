@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 from numpy import ndarray
 from numpy.linalg import svd
+from tp_maths.vector_path.vector_path import VectorPath
 from tp_random_tests.random_number_generator import RandomNumberGenerator
 from tp_utils.type_utils import checked_type
 
-from put_call_parity.process.vector_path import VectorPath
+# from put_call_parity.process.vector_path import VectorPath
 
 
 class VectorPathBuilder(ABC):
@@ -78,15 +79,21 @@ class LognormalPathsBuilder(VectorPathBuilder):
     ):
         super().__init__(times, n_factors=rho_matrix.shape[0])
         self.correlated_normals_builder = CorrelatedNormalPathsBuilder(times, rho_matrix)
+        self.rho_matrix = checked_type(rho_matrix, ndarray)
         self.prices: ndarray = checked_type(prices, ndarray)    # (factor)
         self.drifts: ndarray = checked_type(drifts, ndarray)    # (factor)
         self.vols: ndarray = checked_type(vols, ndarray)        # (factor)
 
     def build(self, rng: RandomNumberGenerator, n_paths: int):
-        correlated_paths = self.correlated_normals_builder.build(rng, n_paths).path     # (ftp)
-        scaled_paths = np.einsum("f,ftp->ftp", self.vols, correlated_paths)             # (ftp)
-        drift_matrix = np.expand_dims(np.einsum("t, f -> ft", self.times, self.drifts), axis=2)
-        drift_matrix2 = np.broadcast_to(drift_matrix, (self.n_factors, self.n_times, n_paths))
-        paths_with_drift = scaled_paths + drift_matrix2
+        brownian_paths = VectorPath.brownian_paths(self.n_factors, self.times, n_paths)
+        correlated_paths = brownian_paths.correlated(self.rho_matrix)
+        # correlated_paths = self.correlated_normals_builder.build(rng, n_paths).path     # (ftp)
+        scaled_paths = correlated_paths.scaled(self.vols)
+        paths_with_drift = scaled_paths.with_drifts(self.drifts)
+        # scaled_paths = np.einsum("f,ftp->ftp", self.vols, correlated_paths)             # (ftp)
+        # drift_matrix = np.expand_dims(np.einsum("t, f -> ft", self.times, self.drifts), axis=2)
+        # drift_matrix2 = np.broadcast_to(drift_matrix, (self.n_factors, self.n_times, n_paths))
+        # paths_with_drift = scaled_paths + drift_matrix2
+        result = paths_with_drift.exp()
         result = np.einsum("f, ftp -> ftp", self.prices, np.exp(paths_with_drift))
         return VectorPath(self.times, result)

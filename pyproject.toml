@@ -8,7 +8,10 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "tp-maths @ git+https://github.com/cage433/tp-maths"
+    "tp-random-tests @ git+https://github.com/cage433/tp-random-tests",
+    "tp-quantity @ git+https://github.com/cage433/tp-quantity",
+    "tp-maths @ git+https://github.com/cage433/tp-maths",
+    "tp-utils @ git+https://github.com/cage433/tp-utils",
 ]
 
 
