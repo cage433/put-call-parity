@@ -44,6 +44,18 @@ class BlackScholes:
         return self.N1
 
     @property
+    def gamma(self) -> float:
+        if self._is_worth_intrinsic:
+            return 0.0
+        return norm.pdf(self.d1) / (self.F * self.vol * np.sqrt(self.T))
+
+    @property
+    def theta(self) -> float:
+        if self._is_worth_intrinsic:
+            return 0.0
+        return -self.F * norm.pdf(self.d1) * self.vol / (2 * np.sqrt(self.T))
+
+    @property
     def N2(self) -> float:
         return norm.cdf(self.d2)
 

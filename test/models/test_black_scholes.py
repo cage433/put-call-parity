@@ -1,11 +1,12 @@
 from unittest import TestCase
 
+from tp_quantity.quantity_test_utils import QtyTestUtils
 from tp_random_tests.random_test_case import RandomisedTest
 
 from put_call_parity.models import BlackScholes, CALL, PUT
 
 
-class BlackScholesTestCase(TestCase):
+class BlackScholesTestCase(TestCase, QtyTestUtils):
 
     @RandomisedTest(number_of_runs=100)
     def test_intrinsic(self, rng):
@@ -39,3 +40,18 @@ class BlackScholesTestCase(TestCase):
             F - K,
             delta=1e-5
         )
+
+    @RandomisedTest(number_of_runs=30)
+    def test_gamma(self, rng):
+        F, K = [rng.uniform(90, 110) for _ in range(2)]
+        vol = 0.1 + rng.uniform() * 0.5
+        T = 0.1 + rng.uniform()
+        call = BlackScholes(CALL, F=F, K=K, vol=vol, T=T)
+        put = BlackScholes(PUT, F=F, K=K, vol=vol, T=T)
+        self.assertAlmostEqual(call.gamma, put.gamma, delta=1e-6)
+        dF = 0.01
+        c_up = BlackScholes(CALL, F=F + dF, K=K, vol=vol, T=T)
+        c_dn = BlackScholes(CALL, F=F - dF, K=K, vol=vol, T=T)
+        numeric_gamma = (c_up.value - 2 * call.value + c_dn.value) / (dF * dF)
+        # print(f"{call.gamma:1.6f}, {numeric_gamma:1.6f}")
+        self.assertAlmostEqual(call.gamma, numeric_gamma, delta = 1e-4)

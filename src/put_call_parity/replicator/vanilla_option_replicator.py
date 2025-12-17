@@ -1,14 +1,12 @@
 from typing import Optional, Tuple
 
-import numpy as np
-from put_call_parity.ref_data.commodity import Commodity
 from tp_maths.brownians.uniform_generator import UniformGenerator
 from tp_maths.vector_path.vector_path import VectorPath
 from tp_quantity.quantity import Qty
 from tp_utils.type_utils import checked_type, checked_optional_type
 
-from put_call_parity.portfolio.portfolio import Portfolio
 from put_call_parity.portfolio.tradeable import OptionTrade, Cash, CommodityTrade, Tradeable
+from put_call_parity.ref_data.commodity import Commodity
 from put_call_parity.valuation_context.valuation_context import ValuationContext
 
 
@@ -28,6 +26,19 @@ class VanillaOptionPortfolio:
     def delta(self, vc: ValuationContext, commodity: Commodity) -> Qty:
         return Qty.sum([t.delta(vc, commodity) for t in self.trades])
 
+    def gamma(self, vc: ValuationContext, commodity: Commodity) -> Qty:
+        return Qty.sum([t.gamma(vc, commodity) for t in self.trades])
+
+    def numeric_delta(self, vc: ValuationContext, commodity: Commodity) -> Qty:
+        return Qty.sum([t.numeric_delta(vc, commodity) for t in self.trades])
+
+    def numeric_gamma(self, vc: ValuationContext, commodity: Commodity) -> Qty:
+        return Qty.sum([t.numeric_gamma(vc, commodity) for t in self.trades])
+
+
+    def numeric_theta(self, vc: ValuationContext, dt: float) -> Qty:
+        return Qty.sum([t.numeric_theta(vc, dt) for t in self.trades])
+
     def rehedge(self, vc: ValuationContext) -> 'VanillaOptionPortfolio':
         delta = self.delta(vc, self.commodity)
         if delta.is_zero:
@@ -35,22 +46,19 @@ class VanillaOptionPortfolio:
 
         rehedge_trade = CommodityTrade(self.commodity, -delta)
         rehedge_trade_cost = rehedge_trade.value(vc)
-        current_value = self.value(vc)
         hedged_portfolio = VanillaOptionPortfolio(
             self.option,
             self.commodity_trade + rehedge_trade,
             self.cash + Cash(-rehedge_trade_cost)
         )
-        # hedged_portfolio_value = hedged_portfolio.value(vc)
-        # assert abs(current_value - hedged_portfolio_value) < Qty(0.01, self.commodity.ccy)
-        # assert abs(hedged_portfolio.delta(vc, self.commodity)) < Qty(0.01, self.commodity.quantity_uom)
         return hedged_portfolio
 
 
 class VanillaOptionReplicator:
-    def __init__(self, portfolio: VanillaOptionPortfolio, initial_vc: ValuationContext):
+    def __init__(self, portfolio: VanillaOptionPortfolio, initial_vc: ValuationContext, price_paths: VectorPath):
         self.portfolio: VanillaOptionPortfolio = checked_type(portfolio, VanillaOptionPortfolio)
         self.initial_vc: ValuationContext = checked_type(initial_vc, ValuationContext)
+        self.price_paths: VectorPath = checked_type(price_paths, VectorPath)
         self.commodity = self.portfolio.option.commodity
         self.vol: Qty = self.initial_vc.vol(self.commodity)
         self.F: Qty = self.initial_vc.price(self.commodity)
@@ -64,23 +72,24 @@ class VanillaOptionReplicator:
         ]
         vcs = [self.initial_vc for _ in range(n_paths)]
 
-        times = np.asarray(
-            [i * self.portfolio.option.expiry_time / n_time_steps for i in range(n_time_steps + 1)]
-        )
-        vols = np.asarray([self.vol.checked_scalar_value])
+        # times = np.asarray(
+        #     [i * self.portfolio.option.expiry_time / n_time_steps for i in range(n_time_steps + 1)]
+        # )
+        times = self.price_paths.times
+        # vols = np.asarray([self.vol.checked_scalar_value])
 
-        paths = (VectorPath.brownian_paths(
-            n_variables=1,
-            times=times,
-            n_paths=n_paths,
-            uniform_generator=generator
-        ).scaled(vols)
-                 .with_lognormal_adjustments(vols)
-                 .exp()
-                 .with_prices([self.F]))
+        # paths = (VectorPath.brownian_paths(
+        #     n_variables=1,
+        #     times=times,
+        #     n_paths=n_paths,
+        #     uniform_generator=generator
+        # ).scaled(vols)
+        #          .with_lognormal_adjustments(vols)
+        #          .exp()
+        #          .with_prices([self.F]))
         for i_time_step in range(n_time_steps):
             time = times[i_time_step + 1]
-            prices = paths.variable_sample(i_variable=0, i_time=i_time_step + 1).values
+            prices = self.price_paths.variable_sample(i_variable=0, i_time=i_time_step + 1).values
             shifted_vcs = [vc.copy(time=time).with_price(self.commodity, Qty(price, self.commodity.price_uom)) for
                            vc, price in zip(vcs, prices)]
             vcs = shifted_vcs

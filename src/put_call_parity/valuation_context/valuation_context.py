@@ -1,6 +1,8 @@
 from numbers import Number
 from typing import Optional
 
+from tp_random_tests.random_number_generator import RandomNumberGenerator
+
 from put_call_parity.ref_data.commodity import Commodity
 from tp_quantity.quantity import Qty
 from tp_quantity.uom import UOM, USD
@@ -79,5 +81,13 @@ class ValuationContext:
         new_prices[commodity] = price
         return self.copy(commodity_prices=new_prices)
 
+    def with_vol(self, commodity: Commodity, vol: Qty) -> 'ValuationContext':
+        new_vols = self.commodity_vols.copy()
+        new_vols[commodity] = vol
+        return self.copy(commodity_vols=new_vols)
+
     def shift_price(self, commodity: Commodity, dP: Qty) -> 'ValuationContext':
         return self.with_price(commodity, self.price(commodity) + dP)
+
+    def shift_vol(self, commodity: Commodity, dVol: Qty) -> 'ValuationContext':
+        return self.with_vol(commodity, self.vol(commodity) + dVol)
