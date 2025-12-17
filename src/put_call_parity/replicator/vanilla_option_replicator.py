@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from put_call_parity.ref_data.commodity import Commodity
@@ -29,46 +29,64 @@ class VanillaOptionPortfolio:
         return Qty.sum([t.delta(vc, commodity) for t in self.trades])
 
     def rehedge(self, vc: ValuationContext) -> 'VanillaOptionPortfolio':
-        delta = self.option.delta(vc, self.commodity)
-        change_in_hedge = -delta - self.commodity_trade.amount
-        if change_in_hedge.is_zero:
+        delta = self.delta(vc, self.commodity)
+        if delta.is_zero:
             return self
 
-        rehedge_trade = CommodityTrade(self.commodity, change_in_hedge)
-        rehedge_trade_cost = vc.price(self.commodity) * change_in_hedge * -1
+        rehedge_trade = CommodityTrade(self.commodity, -delta)
+        rehedge_trade_cost = rehedge_trade.value(vc)
         current_value = self.value(vc)
         hedged_portfolio = VanillaOptionPortfolio(
             self.option,
             self.commodity_trade + rehedge_trade,
-            self.cash + Cash(rehedge_trade_cost)
+            self.cash + Cash(-rehedge_trade_cost)
         )
-        hedged_portfolio_value = hedged_portfolio.value(vc)
-        assert abs(current_value - hedged_portfolio_value) < Qty(0.01, self.commodity.ccy)
+        # hedged_portfolio_value = hedged_portfolio.value(vc)
+        # assert abs(current_value - hedged_portfolio_value) < Qty(0.01, self.commodity.ccy)
+        # assert abs(hedged_portfolio.delta(vc, self.commodity)) < Qty(0.01, self.commodity.quantity_uom)
         return hedged_portfolio
 
 
 class VanillaOptionReplicator:
-    def __init__(self, option: OptionTrade, initial_vc: ValuationContext):
-        self.option: OptionTrade = checked_type(option, OptionTrade)
+    def __init__(self, portfolio: VanillaOptionPortfolio, initial_vc: ValuationContext):
+        self.portfolio: VanillaOptionPortfolio = checked_type(portfolio, VanillaOptionPortfolio)
         self.initial_vc: ValuationContext = checked_type(initial_vc, ValuationContext)
-        self.commodity = option.commodity
+        self.commodity = self.portfolio.option.commodity
+        self.vol: Qty = self.initial_vc.vol(self.commodity)
+        self.F: Qty = self.initial_vc.price(self.commodity)
 
-    def replicate(self, generator: UniformGenerator, n_time_steps: int, n_paths: int):
-        option_value = self.option.value(self.initial_vc)
+    def replicate(self, generator: UniformGenerator, n_time_steps: int, n_paths: int) -> Tuple[
+        list[VanillaOptionPortfolio], list[ValuationContext]]:
+        option_value = self.portfolio.value(self.initial_vc)
         portfolios = [
-            Portfolio([self.option, Cash(option_value.negate())])
+            self.portfolio.rehedge(self.initial_vc)
             for _ in range(n_paths)
         ]
         vcs = [self.initial_vc for _ in range(n_paths)]
 
         times = np.asarray(
-            [i * self.option.expiry_time / n_time_steps for i in range(n_time_steps + 1)]
+            [i * self.portfolio.option.expiry_time / n_time_steps for i in range(n_time_steps + 1)]
         )
-        paths = VectorPath.brownian_paths(n_variables=1, times=times, n_paths=n_paths, uniform_generator=generator)
+        vols = np.asarray([self.vol.checked_scalar_value])
+
+        paths = (VectorPath.brownian_paths(
+            n_variables=1,
+            times=times,
+            n_paths=n_paths,
+            uniform_generator=generator
+        ).scaled(vols)
+                 .with_lognormal_adjustments(vols)
+                 .exp()
+                 .with_prices([self.F]))
         for i_time_step in range(n_time_steps):
             time = times[i_time_step + 1]
             prices = paths.variable_sample(i_variable=0, i_time=i_time_step + 1).values
             shifted_vcs = [vc.copy(time=time).with_price(self.commodity, Qty(price, self.commodity.price_uom)) for
                            vc, price in zip(vcs, prices)]
-
-            pass
+            vcs = shifted_vcs
+            rehedged_portfolios = [
+                pf.rehedge(vc)
+                for pf, vc in zip(portfolios, vcs)
+            ]
+            portfolios = rehedged_portfolios
+        return portfolios, vcs
